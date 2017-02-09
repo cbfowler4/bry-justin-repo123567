@@ -127,25 +127,26 @@ def _parseArgs():
     return args
 
 
-def _stepProcess(stepDir, stepCounter, rate, seq, stepPins, dt_s):
+def _stepProcess(stepDir, stepCounter, rate, seq, stepPins):
     a = 1
     while a>0:
-        start = time.time()
-        print start
-        rate_int = rate.value
-        stepDir_int = stepDir.value
-        end = time.time()
-        while (end-start)<dt_s:
-            stepCounter = _stepper(stepDir_int, stepCounter, rate_int, seq, stepPins, dt_s) #take a step
-            end = time.time() #check time
+        rate_int = rate.value #read shared memory object
+        stepDir_int = stepDir.value #read shared memory object
+        stepCounter = _stepper(stepDir_int, stepCounter, rate_int, seq, stepPins, dt_s) #take a step
 
-def _controlProcess(pos_curr, q1, q2, rate, stepDir):
-    for x in range(len(pos_curr)):
+def _controlProcess(pos_curr, q1, q2, rate, stepDir, dt_s):
+    a = 1
+    x = 0
+    while a>0: 
         start = time.time()
-        print start
+        if x >= (len(pos_curr)-1): #resets the position count so it can go on forever
+            x = 0
+        else:
+            x=x+1
+        print x    
         [stepDir_int, rate_int] = _control(pos_curr[x], q1, q2)
-        stepDir.value = stepDir_int
-        rate.value = rate_int
+        stepDir.value = stepDir_int #set shared memory object
+        rate.value = rate_int #set shared memory object
         end = time.time()
         time.sleep(dt_s-(end-start))
 
@@ -167,16 +168,15 @@ if __name__ == "__main__":
 
     pos_curr = [11.0, -13.5, 15.0, -15.0, 15.0] #used to test, position vector for control to track to
 
-    rate = multiprocessing.Value('d', 0.0)
-    stepDir = multiprocessing.Value('i', 1)
+    rate = multiprocessing.Value('d', 0.0) #creates a shared memory object called rate
+    stepDir = multiprocessing.Value('i', 1)#creates a shared memory object called stepDir
 
-    
-    Pstep = multiprocessing.Process(target= _stepProcess, args=(stepDir, stepCounter, rate, seq, stepPins, dt_s))
-    Pcontrol = multiprocessing.Process(target = _controlProcess, args = (pos_curr, q1, q2, rate, stepDir))
+    Pstep = multiprocessing.Process(target= _stepProcess, args=(stepDir, stepCounter, rate, seq, stepPins))
+    Pcontrol = multiprocessing.Process(target = _controlProcess, args = (pos_curr, q1, q2, rate, stepDir, dt_s))
 
     Pstep.start()
     Pcontrol.start()
-
+ 
     Pstep.join()
     Pcontrol.join()
         
