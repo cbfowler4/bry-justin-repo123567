@@ -35,7 +35,7 @@ if __name__ == "__main__":
     p2 = multiprocessing.Process(target = test2)
     
     p.start()
-    p2.start()
+    #p2.start()
 
     p.join() 
-    p2.join()
+    #p2.join()
