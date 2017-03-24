@@ -18,8 +18,8 @@ def _setupStepper():
     #Use BCM GPIO references instead of physical pin numbers
     gpio.setmode(gpio.BCM)
 
-    #Define gpio signals to use physical pins 11, 15, 16, 18
-    #GPIO17, GPIO22, GPIO23, GPIO24
+    #Define gpio signals to use physical pins 11, 12, 13, 15
+    #GPIO17, GPIO18, GPIO27, GPIO24
     StepPins = [17, 18, 27, 22]
 
     #set all pins as output
