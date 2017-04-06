@@ -140,12 +140,8 @@ def _controlProcess(pos_curr, q1, q2, rate, stepDir, dt_s):
     x = 0
     while a>0: 
         start = time.time()
-        if x >= (len(pos_curr)-1): #resets the position count so it can go on forever
-            x = 0
-        else:
-            x=x+1
-        print x    
-        [stepDir_int, rate_int] = _control(pos_curr[x], q1, q2)
+        pos_curr_int = poss_cur.value
+        [stepDir_int, rate_int] = _control(pos_curr_int, q1, q2)
         stepDir.value = stepDir_int #set shared memory object
         rate.value = rate_int #set shared memory object
         end = time.time()
@@ -153,7 +149,7 @@ def _controlProcess(pos_curr, q1, q2, rate, stepDir, dt_s):
 
 
 
-def camera():
+def camera(pos_curr):
   face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
   cap = cv2.VideoCapture(0)
 
@@ -168,7 +164,7 @@ def camera():
           xval = x + w/2
           yval = y+ h/2
           print xval
-       
+      pos_curr.value = xval 
       cv2.imshow('img', img)
     
 
@@ -194,14 +190,15 @@ if __name__ == "__main__":
     stepCounter = 0
     dt_s = 2.0
 
-    pos_curr = [11.0, -13.5, 15.0, -15.0, 15.0] #used to test, position vector for control to track to
+    #pos_curr = [11.0, -13.5, 15.0, -15.0, 15.0] #used to test, position vector for control to track to
 
     rate = multiprocessing.Value('d', 0.0) #creates a shared memory object called rate
     stepDir = multiprocessing.Value('i', 1)#creates a shared memory object called stepDir
+    pos_curr = multiprocessing.Value('d', 0.0)
 
     Pstep = multiprocessing.Process(target= _stepProcess, args=(stepDir, stepCounter, rate, seq, stepPins))
     Pcontrol = multiprocessing.Process(target = _controlProcess, args = (pos_curr, q1, q2, rate, stepDir, dt_s))
-    Pcamera = multiprocessing.Process(target = camera, args = ())
+    Pcamera = multiprocessing.Process(target = camera, args = (pos_curr,))
     
     Pstep.start()
     Pcontrol.start()
