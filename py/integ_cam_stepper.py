@@ -140,7 +140,7 @@ def _controlProcess(pos_curr, q1, q2, rate, stepDir, dt_s):
     x = 0
     while a>0: 
         start = time.time()
-        pos_curr_int = poss_cur.value
+        pos_curr_int = pos_curr.value
         [stepDir_int, rate_int] = _control(pos_curr_int, q1, q2)
         stepDir.value = stepDir_int #set shared memory object
         rate.value = rate_int #set shared memory object
