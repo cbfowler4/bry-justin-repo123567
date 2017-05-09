@@ -90,8 +90,8 @@ def _cleanupStepper(stepPins):
 def _setupControl():
 #This function sets up the control. Two quadrants are defined in the control: q1 and q2.  
 
-    q1 = 3
-    q2 = 10
+    q1 = 75
+    q2 = 125
 
     return q1, q2
 
@@ -107,9 +107,9 @@ def _control(pos_curr, q1, q2):
     if (np.abs(pos_curr) < q1):
         rate = 0
     elif (np.abs(pos_curr) < q2): 
-        rate = 50
+        rate = 100
     else:
-        rate = 25
+        rate = 50
 
     return stepDir, rate
 
@@ -161,10 +161,10 @@ def camera(pos_curr):
           cv2.rectangle(img, (x,y), (x+w, y+h), (255,0,0), 2)
           eoi_gray = gray[y:y+h, x:x+w]
           roi_color = img[y:y+h, x:x+w]
-          xval = x + w/2
+          xval = (x + w/2)-300
           yval = y+ h/2
           print xval
-      pos_curr.value = xval 
+          pos_curr.value = -1*(xval) #multiplied by negative value to reverse directionality 
       cv2.imshow('img', img)
     
 
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     [seq, stepPins] = _setupStepper() 
     [q1, q2] = _setupControl()
     stepCounter = 0
-    dt_s = 2.0
+    dt_s = 1.0
 
     #pos_curr = [11.0, -13.5, 15.0, -15.0, 15.0] #used to test, position vector for control to track to
 
