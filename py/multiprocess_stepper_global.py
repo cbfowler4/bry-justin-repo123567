@@ -9,6 +9,15 @@ import numpy as np
 import argparse
 import pdb
 import multiprocessing
+import Tkinter as tk
+
+
+global rate3
+global stepDir3
+global value
+stepDir3 = 1
+rate3 = 0
+
 
 
 
@@ -25,7 +34,6 @@ def _setupStepper():
 
     #set all pins as output
     for pin in StepPins:
-        print "Setup pins"
         gpio.setup(pin,gpio.OUT)
         gpio.output(pin, False)
 
@@ -43,7 +51,7 @@ def _setupStepper():
 
 
 
-def _stepper(stepDir, stepCounter, rate_ms_per_stp, seq, stepPins, dt_s):
+def _stepper(stepDir, stepCounter, seq, stepPins, dt_s):
 #This function takes the step direction, the current step number (1-4), the rate, the drive sequence, 
 #the defined step pin numbers and the discrete time interval. The function takes a step in the stepper motor.
 #Returns the current step.
@@ -51,7 +59,7 @@ def _stepper(stepDir, stepCounter, rate_ms_per_stp, seq, stepPins, dt_s):
     StepCount = len(seq)
 
     #Read wait time from command line
-    rate = rate_ms_per_stp/float(1000)
+    rate = rate3/float(1000)
     if (rate > 0): 
         for pin in range(0,4):
             xpin = stepPins[pin] #get gpio
@@ -113,35 +121,14 @@ def _control(pos_curr, q1, q2):
     return stepDir, rate
 
 
-
-def _parseArgs():
-#Not used. This function is designed to parse the command line for user input and feed into the stepper script. 
-
-    parser = argparse.ArgumentParser(description = "Enter in string of angle commands")
-
-    parser.add_argument('movement', type = int, nargs = '+', help = 'enter in string of angles and wait times until next move')
-    parser.add_argument('-s', type = int, help = 'movement speed between each step in ms, default is 10')
-
-    args = parser.parse_args()
-
-    return args
-
-
-def _stepProcess(stepDir, stepCounter, rate, seq, stepPins):
+def _stepProcess(stepCounter, seq, stepPins):
     a = 1
     while a>0:
-        rate_int = rate.value #read shared memory object
-        stepDir_int = stepDir.value #read shared memory object
-        stepCounter = _stepper(stepDir_int, stepCounter, rate_int, seq, stepPins, dt_s) #take a step
-
-def _stepProcess2(stepDir, stepCounter, seq, stepPins):
-    a = 1
-    while a>0:
-        rate_int = rate
-        stepDir_int = stepDir.value #read shared memory object
-        stepCounter = _stepper(stepDir_int, stepCounter, rate_int, seq, stepPins, dt_s) #take a step
+        print rate3
+        stepDir_int = stepDir3
+        stepCounter = _stepper(stepDir_int, stepCounter, seq, stepPins, dt_s) #take a step
         
-def _controlProcess(pos_curr, q1, q2, rate, stepDir, dt_s):
+def _controlProcess(pos_curr, q1, q2, dt_s):
     a = 1
     x = 0
     while a>0: 
@@ -152,19 +139,38 @@ def _controlProcess(pos_curr, q1, q2, rate, stepDir, dt_s):
             x=x+1
         print x    
         [stepDir_int, rate_int] = _control(pos_curr[x], q1, q2)
-        stepDir.value = stepDir_int #set shared memory object
-        rate.value = rate_int #set shared memory object
+        stepDir3 = stepDir_int 
+        rate3 = rate_int 
         end = time.time()
         time.sleep(dt_s-(end-start))
 
+
+class MyApp:
+    def __init__(self, parent):
+        self.myParent = parent #remember my parent, the root
+        self.myContainer1 = tk.Frame(parent)
+        self.myContainer1.pack()
+
+        self.yellowButton = tk.Button(self.myContainer1, command=self.yellowButtonClick)
+        self.yellowButton.configure(text = "YELLOW", background = "yellow")
+        self.yellowButton.pack(side=tk.LEFT)
+        self.yellowButton.bind("<Button-1>", self.button1Click)
+
+        self.redButton = tk.Button(self.myContainer1, command=self.redButtonClick)
+        self.redButton.configure(text = "RED", background = "red")
+        self.redButton.pack(side=tk.LEFT)
+    def redButtonClick(self):
+        print "hello"
+    def yellowButtonClick(self):
+        rate3 = rate3 + 10
+        print rate3
+    def button1Click(self, event):
+        rate3 = 33
+        print rate3 + 10
     
 ################################################################################
 #execute when python script is called.
 ################################################################################
-
-#args = _parseArgs()
-#_stepper(args.movement, args.s)
-
 
 
 if __name__ == "__main__":
@@ -175,19 +181,22 @@ if __name__ == "__main__":
 
     pos_curr = [11.0, -13.5, 15.0, -15.0, 15.0] #used to test, position vector for control to track to
 
-    global rate2
-    #rate = multiprocessing.Value('d', 0.0) #creates a shared memory object called rate
+
     stepDir = multiprocessing.Value('i', 1)#creates a shared memory object called stepDir
 
-    Pstep = multiprocessing.Process(target= _stepProcess2, args=(stepDir, stepCounter, seq, stepPins))
-    #Pstep = multiprocessing.Process(target= _stepProcess, args=(stepDir, stepCounter, rate, seq, stepPins))
-    Pcontrol = multiprocessing.Process(target = _controlProcess, args = (pos_curr, q1, q2, rate, stepDir, dt_s))
+    Pstep = multiprocessing.Process(target= _stepProcess, args=(stepCounter, seq, stepPins))
+    #Pcontrol = multiprocessing.Process(target = _controlProcess, args = (pos_curr, q1, q2, dt_s))
 
     Pstep.start()
-    Pcontrol.start()
+    #Pcontrol.start()
+
+
+    root = tk.Tk()
+    myapp = MyApp(root)
+    root.mainloop()
  
     Pstep.join()
-    Pcontrol.join()
+    #Pcontrol.join()
         
                                         
     _cleanupStepper(stepPins) #cleanup
