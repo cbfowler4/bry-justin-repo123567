@@ -21,6 +21,8 @@ class MyApp:
             self.button1["background"] = "yellow"
         else:
             self.button1["background"] = "green"
+        print "hello"
+
 
     def button2Click(self, event):
         self.myParent.destroy()
